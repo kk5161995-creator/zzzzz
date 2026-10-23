@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>من سيربح الزلط؟ 🪨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      font-family: 'Cairo', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #020210;
+      color: #fff;
+      direction: rtl;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      max-width: 1100px;
+      max-height: 100vh;
+      background: radial-gradient(circle at center, #0f1035 0%, #05051a 70%, #000005 100%);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0, 81, 255, 0.3);
+      transition: background 0.3s ease;
+    }
+
+    /* Screen Effects */
+    #game-container.fx-correct {
+      animation: flash-green 0.8s ease-in-out infinite alternate;
+    }
+
+    #game-container.fx-wrong {
+      animation: flash-red-shake 0.5s ease-in-out;
+    }
+
+    @keyframes flash-green {
+      0% { box-shadow: inset 0 0 30px #00ff44, 0 0 50px #00ff44; }
+      100% { box-shadow: inset 0 0 100px #00ff44, 0 0 80px #00ff44; }
+    }
+
+    @keyframes flash-red-shake {
+      0% { transform: translate(0, 0); box-shadow: inset 0 0 50px #ff0000; }
+      20% { transform: translate(-10px, 5px); box-shadow: inset 0 0 100px #ff0000; }
+      40% { transform: translate(10px, -5px); box-shadow: inset 0 0 50px #ff0000; }
+      60% { transform: translate(-8px, 3px); box-shadow: inset 0 0 100px #ff0000; }
+      80% { transform: translate(8px, -3px); box-shadow: inset 0 0 50px #ff0000; }
+      100% { transform: translate(0, 0); box-shadow: inset 0 0 0px transparent; }
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: rgba(5, 5, 25, 0.9);
+      border-bottom: 2px solid #1f1f54;
+      z-index: 10;
+      width: 100%;
+    }
+
+    .brand {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .timer-box {
+      background: linear-gradient(180deg, #220000 0%, #110000 100%);
+      border: 2px solid #ff3333;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #ff3333;
+      font-weight: 900;
+      font-size: 1.1rem;
+      box-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+    }
+
+    .timer-box.warning {
+      animation: pulse-timer 0.5s infinite alternate;
+      color: #ff0000;
+      border-color: #ff0000;
+    }
+
+    @keyframes pulse-timer {
+      from { transform: scale(1); box-shadow: 0 0 5px #ff0000; }
+      to { transform: scale(1.1); box-shadow: 0 0 18px #ff0000; }
+    }
+
+    .lifelines {
+      display: flex;
+      gap: 6px;
+    }
+
+    .lifeline-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid #ffd700;
+      background: radial-gradient(circle, #1a1a54 0%, #080826 100%);
+      color: #ffd700;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+    }
+
+    .lifeline-btn.used {
+      border-color: #444;
+      color: #444;
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .sound-toggle {
+      background: none;
+      border: none;
+      color: #ffd700;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    /* Main Body Layout */
+    .main-body {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    /* Ladder Bar on the Left Side */
+    .left-ladder {
+      width: 180px;
+      background: rgba(5, 5, 20, 0.95);
+      border-right: 2px solid #1f1f54;
+      display: flex;
+      flex-direction: column-reverse;
+      justify-content: space-around;
+      padding: 10px 8px;
+      z-index: 5;
+    }
+
+    .ladder-item {
+      padding: 3px 8px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #6a6ab0;
+      text-align: right;
+      border-radius: 6px;
+      margin: 1px 0;
+      display: flex;
+      justify-content: space-between;
+      direction: ltr;
+    }
+
+    .ladder-item.milestone {
+      color: #ffffff;
+    }
+
+    .ladder-item.active {
+      background: #ffd700;
+      color: #000;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.9);
+      font-size: 0.85rem;
+    }
+
+    .ladder-item.passed {
+      color: #27ae60;
+    }
+
+    /* Quiz Area */
+    .quiz-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 15px;
+      z-index: 2;
+    }
+
+    .question-box {
+      background: linear-gradient(180deg, #121342 0%, #080826 100%);
+      border: 2px solid #3b3c85;
+      border-radius: 14px;
+      padding: 18px 15px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 15px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 102, 255, 0.2);
+      min-height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.5;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .option-btn {
+      background: linear-gradient(180deg, #0e0f38 0%, #05051a 100%);
+      border: 2px solid #282968;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-align: right;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      width: 100%;
+    }
+
+    .option-btn .letter {
+      color: #ffd700;
+      font-weight: 800;
+      margin-left: 8px;
+      font-size: 1.05rem;
+      flex-shrink: 0;
+    }
+
+    .option-btn .opt-text {
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .option-btn.selected {
+      background: linear-gradient(180deg, #b8860b 0%, #785805 100%) !important;
+      border-color: #ffffff !important;
+      color: #fff !important;
+    }
+
+    .option-btn.correct {
+      background: linear-gradient(180deg, #1b8a2e 0%, #0b4716 100%) !important;
+      border-color: #00ff44 !important;
+      color: #fff !important;
+      animation: pulse-correct 0.4s infinite alternate;
+    }
+
+    .option-btn.wrong {
+      background: linear-gradient(180deg, #a81919 0%, #590909 100%) !important;
+      border-color: #ff3333 !important;
+      color: #fff !important;
+    }
+
+    .option-btn.hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    @keyframes pulse-correct {
+      from { box-shadow: 0 0 10px #00ff44; }
+      to { box-shadow: 0 0 25px #00ff44; }
+    }
+
+    /* Screens & Modals */
+    .overlay-screen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(2, 2, 16, 0.97);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .overlay-title {
+      font-size: 2rem;
+      color: #ffd700;
+      font-weight: 900;
+      margin-bottom: 12px;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    }
+
+    .overlay-desc {
+      font-size: 1rem;
+      color: #cccccc;
+      margin-bottom: 25px;
+      max-width: 450px;
+      line-height: 1.6;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .action-btn {
+      background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
+      color: #000;
+      border: none;
+      padding: 10px 24px;
+      font-size: 1rem;
+      font-weight: 900;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    }
+
+    .action-btn.secondary {
+      background: linear-gradient(180deg, #3b3c85 0%, #1a1a54 100%);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(59, 60, 133, 0.4);
+    }
+
+    .modal {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #0d0e33;
+      border: 2px solid #ffd700;
+      border-radius: 12px;
+      padding: 18px;
+      width: 85%;
+      max-width: 380px;
+      z-index: 30;
+      box-shadow: 0 0 30px rgba(0,0,0,0.9);
+      display: none;
+      text-align: center;
+    }
+
+    .modal h3 {
+      color: #ffd700;
+      margin-bottom: 12px;
+    }
+
+    .poll-bar-container { margin: 8px 0; text-align: right; }
+    .poll-label { font-size: 0.85rem; margin-bottom: 3px; }
+    .poll-bg { background: #1a1a40; height: 16px; border-radius: 8px; overflow: hidden; }
+    .poll-fill { background: #ffd700; height: 100%; width: 0%; transition: width 0.8s ease; }
+
+    @media (max-width: 650px) {
+      .left-ladder { width: 125px; padding: 5px 2px; }
+      .ladder-item { font-size: 0.68rem; padding: 2px 3px; }
+      .options-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="brand">من سيربح الزلط 🪨</div>
+    <div class="timer-box" id="timer">60</div>
+    <div class="lifelines">
+      <button class="lifeline-btn" id="life-5050" onclick="use5050()" title="حذف إجابتين">50:50</button>
+      <button class="lifeline-btn" id="life-audience" onclick="useAudience()" title="رأي الجمهور">👥</button>
+      <button class="lifeline-btn" id="life-phone" onclick="usePhone()" title="اتصال بجمال">📞</button>
+    </div>
+    <button class="sound-toggle" id="sound-btn" onclick="toggleSound()">🔊</button>
+  </div>
+
+  <!-- Main Body: Left Side Ladder + Quiz Area -->
+  <div class="main-body">
+    <!-- Left Ladder -->
+    <div class="left-ladder" id="left-ladder"></div>
+
+    <!-- Quiz Area -->
+    <div class="quiz-area">
+      <div class="question-box" id="question-text">
+        جاري تحميل السؤال...
+      </div>
+
+      <div class="options-grid" id="options-container">
+        <button class="option-btn" onclick="selectOption(0)">
+          <span class="letter">أ)</span> <span class="opt-text"></span>
+        </button>
+        <button class="option-btn" onclick="selectOption(1)">
+          <span class="letter">ب)</span> <span class="opt-text"></span>
+        </button>
+        <button class="option-btn" onclick="selectOption(2)">
+          <span class="letter">ج)</span> <span class="opt-text"></span>
+        </button>
+        <button class="option-btn" onclick="selectOption(3)">
+          <span class="letter">د)</span> <span class="opt-text"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Screen -->
+  <div class="overlay-screen" id="start-screen">
+    <div class="overlay-title">من سيربح الزلط؟ 🪨</div>
+    <div class="overlay-desc">
+      أهلاً بك في المسابقة التنافسية الكبرى! <br>
+      20 سؤالاً تفصلك عن المليون زلطة مع المؤثرات الصوتية والضوئية المباشرة!
+    </div>
+    <button class="action-btn" onclick="startGame()">ابدأ اللعبة 🚀</button>
+  </div>
+
+  <!-- Dialog On Error -->
+  <div class="overlay-screen" id="over-screen" style="display: none;">
+    <div class="overlay-title" style="color: #ffaa00;" id="over-title">إجابة خاطئة! 😅</div>
+    <div class="overlay-desc" id="over-desc">
+      ماذا تريد أن تفعل الآن؟
+    </div>
+    <div class="button-group">
+      <button class="action-btn" onclick="retryQuestion()">إعادة إجابة هذا السؤال 🔄</button>
+      <button class="action-btn secondary" onclick="skipToNext()">التنقل للسؤال التالي ⏭️</button>
+      <button class="action-btn secondary" style="background: #a81919;" onclick="startGame()">البدء من الأول 🏁</button>
+    </div>
+  </div>
+
+  <!-- Win Screen -->
+  <div class="overlay-screen" id="win-screen" style="display: none;">
+    <div class="overlay-title" style="color: #00ff44;">مبروووك! 🏆</div>
+    <div class="overlay-desc">
+      لقد أجبت على جميع الأسئلة وحصلت على المليون زلطة بجدارة! 🎉🪨
+    </div>
+    <button class="action-btn" onclick="startGame()">العب مجدداً 🔄</button>
+  </div>
+
+  <!-- Lifeline Modal -->
+  <div class="modal" id="modal">
+    <h3 id="modal-title">وسيلة المساعدة</h3>
+    <div id="modal-content"></div>
+    <button class="action-btn" style="margin-top: 15px; padding: 6px 20px; font-size: 0.95rem;" onclick="closeModal()">إغلاق</button>
+  </div>
+</div>
+
+<script>
+  const questions = [
+    { q: "إذا قام شخص بفتح الثلاجة، ونظر إلى محتوياتها، ثم أغلقها وفتحها مرة أخرى بعد دقيقة، فما الذي يُرجّح أنه يبحث عنه؟", opts: ["الطعام", "مشروب", "شيء جديد ظهر في الثلاجة خلال دقيقة", "إجابة السؤال الوجودي: أنا جعان ولا زهقان؟"], ans: 3, prize: "100 زلطة" },
+    { q: "ما الكوكب المعروف باسم الكوكب الأحمر؟", opts: ["الزهرة", "المريخ", "المشتري", "زحل"], ans: 1, prize: "200 زلطة" },
+    { q: "ما اسم الملاك/الكروبيم الذي حرس جنة عدن؟", opts: ["كاروبيم", "جبرائيل", "رافائيل", "ميخائيل"], ans: 0, prize: "300 زلطة" },
+    { q: "ما الرمز الكيميائي للذهب؟", opts: ["Ag", "Fe", "Au", "Go"], ans: 2, prize: "500 زلطة" },
+    { q: "مَن الملكة التي خاطرت بحياتها من أجل شعبها؟", opts: ["راعوث", "أستير", "دبورة", "مريم"], ans: 1, prize: "1,000 زلطة" },
+    { q: "إذا قال لك صديقك: 'أنا مش جعان'، ثم بدأ يأكل من طبقك، فما التفسير العلمي لهذه الظاهرة؟", opts: ["فقدان مؤقت للشهية", "المشاركة الوجدانية", "الجوع الانتقائي", "نظام الضرائب الغذائية"], ans: 3, prize: "2,000 زلطة" },
+    { q: "ما هي لغة دولة البرازيل؟", opts: ["برتغالي", "برازيلي", "انجليزي", "صعيدي"], ans: 0, prize: "4,000 زلطة" },
+    { q: "كم كان عمر آدم عندما ولد شيث مع ذكر الشاهد؟", opts: ["130 (تكوين 4:25)", "135 (تكوين 5:24)", "140 (تكوين 4:20)", "150 (تكوين 5:55)"], ans: 0, prize: "8,000 زلطة" },
+    { q: "ما أكبر كوكب في المجموعة الشمسية؟", opts: ["الأرض", "زحل", "المشتري", "نبتون"], ans: 2, prize: "16,000 زلطة" },
+    { q: "الزاوية بين عقرب الساعات والدقائق عندما تكون الساعة 3 وربع؟", opts: ["صفر", "1/2", "1/4", "1"], ans: 0, prize: "32,000 زلطة" },
+    { q: "ما الاسم الذي أعطاه الله لأبرام؟", opts: ["إسحاق", "إسرائيل", "إبراهيم", "يعقوب"], ans: 2, prize: "64,000 زلطة" },
+    { q: "كم ساعة في الأسبوع؟", opts: ["50", "150", "68", "168"], ans: 3, prize: "125,000 زلطة" },
+    { q: "في أي مدينة وُلد يسوع المسيح؟", opts: ["الناصرة", "أورشليم", "بيت لحم", "أريحا"], ans: 2, prize: "250,000 زلطة" },
+    { q: "ما الغاز الأكثر وجوداً في الغلاف الجوي للأرض؟", opts: ["الأكسجين", "النيتروجين", "ثاني أكسيد الكربون", "الهيدروجين"], ans: 1, prize: "500,000 زلطة" },
+    { q: "مَن التلميذ الذي شكّ في قيامة المسيح حتى رأى الدليل بنفسه؟", opts: ["أندراوس", "توما", "فيلبس", "متى"], ans: 1, prize: "600,000 زلطة" },
+    { q: "ما هو الحيوان الذي قلبه عند رأسه؟", opts: ["ضفدع", "الجمبري", "الاستاكوزا", "عنكبوت"], ans: 1, prize: "700,000 زلطة" },
+    { q: "كم قلباً للأخطبوط؟", opts: ["قلب واحد", "قلبان", "ثلاثة قلوب", "أربعة قلوب"], ans: 2, prize: "800,000 زلطة" },
+    { q: "مَن التلميذ الذي أنكر معرفته بيسوع ثلاث مرات؟", opts: ["يوحنا", "بطرس", "يعقوب", "توما"], ans: 1, prize: "900,000 زلطة" },
+    { q: "ما أصغر عظمة في جسم الإنسان؟", opts: ["عظمة الركاب في الأذن", "عظمة الأنف", "عظمة الإصبع", "عظمة الترقوة"], ans: 0, prize: "950,000 زلطة" },
+    { q: "كم رجلاً أطعم يسوع بخمسة أرغفة وسمكتين، دون حساب النساء والأطفال؟", opts: ["ألف", "ألفان", "أربعة آلاف", "خمسة آلاف"], ans: 3, prize: "1,000,000 زلطة" }
+  ];
+
+  let currentIdx = 0;
+  let isSoundOn = true;
+  let canAnswer = true;
+  let timerVal = 60;
+  let timerInterval = null;
+
+  // Exact Audio Soundboard Integration (Liozon GitHub Source)
+  const SOUND_BASE = "https://raw.githubusercontent.com/Liozon/WhoWantsToBeAMillionaire-Soundboard/master/sounds/";
+  const audioTracks = {
+    clock: new Audio(SOUND_BASE + "question_clock.mp3"),
+    finalAnswer: new Audio(SOUND_BASE + "final_answer.mp3"),
+    correct: new Audio(SOUND_BASE + "correct_answer.mp3"),
+    wrong: new Audio(SOUND_BASE + "wrong_answer.mp3"),
+    lifeline: new Audio(SOUND_BASE + "lifeline.mp3")
+  };
+
+  function stopAllAudio() {
+    Object.values(audioTracks).forEach(a => {
+      try {
+        a.pause();
+        a.currentTime = 0;
+      } catch(e){}
+    });
+  }
+
+  function playAudioTrack(trackKey, loop = false) {
+    if (!isSoundOn) return;
+    try {
+      stopAllAudio();
+      const track = audioTracks[trackKey];
+      if (track) {
+        track.loop = loop;
+        track.volume = 0.85;
+        track.play().catch(() => {});
+      }
+    } catch(e) {}
+  }
+
+  function toggleSound() {
+    isSoundOn = !isSoundOn;
+    document.getElementById('sound-btn').innerText = isSoundOn ? '🔊' : '🔇';
+    if (!isSoundOn) stopAllAudio();
+    else if (canAnswer) playAudioTrack('clock', true);
+  }
+
+  function triggerEffect(type) {
+    const container = document.getElementById('game-container');
+    container.classList.remove('fx-correct', 'fx-wrong');
+    if (type === 'correct') {
+      container.classList.add('fx-correct');
+    } else if (type === 'wrong') {
+      container.classList.add('fx-wrong');
+      setTimeout(() => container.classList.remove('fx-wrong'), 600);
+    }
+  }
+
+  function clearEffects() {
+    document.getElementById('game-container').classList.remove('fx-correct', 'fx-wrong');
+  }
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    timerVal = 60;
+    const timerEl = document.getElementById('timer');
+    timerEl.innerText = timerVal;
+    timerEl.classList.remove('warning');
+
+    timerInterval = setInterval(() => {
+      timerVal--;
+      timerEl.innerText = timerVal;
+
+      if (timerVal <= 10) {
+        timerEl.classList.add('warning');
+      }
+
+      if (timerVal <= 0) {
+        clearInterval(timerInterval);
+        timeOutGameOver();
+      }
+    }, 1000);
+  }
+
+  function timeOutGameOver() {
+    if (!canAnswer) return;
+    canAnswer = false;
+    playAudioTrack('wrong');
+    triggerEffect('wrong');
+
+    document.getElementById('over-title').innerText = "انتهى الوقت! ⏱️";
+    document.getElementById('over-desc').innerText = `انتهت الـ 60 ثانية على السؤال رقم (${currentIdx + 1}). ماذا تريد أن تفعل؟`;
+    document.getElementById('over-screen').style.display = 'flex';
+  }
+
+  function renderLeftLadder() {
+    const ladder = document.getElementById('left-ladder');
+    ladder.innerHTML = '';
+    questions.forEach((q, idx) => {
+      const item = document.createElement('div');
+      item.className = `ladder-item ${idx === currentIdx ? 'active' : idx < currentIdx ? 'passed' : ''}`;
+      if (idx === 4 || idx === 9 || idx === 14 || idx === 19) item.classList.add('milestone');
+      item.innerHTML = `<span>${q.prize}</span> <span>.${idx + 1}</span>`;
+      ladder.appendChild(item);
+    });
+  }
+
+  function loadQuestion() {
+    canAnswer = true;
+    clearEffects();
+    const qData = questions[currentIdx];
+    document.getElementById('question-text').innerText = `${currentIdx + 1}. ${qData.q}`;
+
+    const optsBtns = document.querySelectorAll('.option-btn');
+    optsBtns.forEach((btn, idx) => {
+      btn.className = 'option-btn';
+      btn.querySelector('.opt-text').innerText = qData.opts[idx];
+    });
+
+    renderLeftLadder();
+    startTimer();
+    playAudioTrack('clock', true);
+  }
+
+  function selectOption(optIdx) {
+    if (!canAnswer) return;
+    canAnswer = false;
+    clearInterval(timerInterval);
+    playAudioTrack('finalAnswer');
+
+    const btns = document.querySelectorAll('.option-btn');
+    btns[optIdx].classList.add('selected');
+
+    setTimeout(() => {
+      const correctIdx = questions[currentIdx].ans;
+      if (optIdx === correctIdx) {
+        btns[optIdx].classList.remove('selected');
+        btns[optIdx].classList.add('correct');
+        playAudioTrack('correct');
+        triggerEffect('correct');
+
+        setTimeout(() => {
+          currentIdx++;
+          if (currentIdx >= questions.length) {
+            stopAllAudio();
+            clearEffects();
+            document.getElementById('win-screen').style.display = 'flex';
+          } else {
+            loadQuestion();
+          }
+        }, 2200);
+      } else {
+        btns[optIdx].classList.remove('selected');
+        btns[optIdx].classList.add('wrong');
+        btns[correctIdx].classList.add('correct');
+        playAudioTrack('wrong');
+        triggerEffect('wrong');
+
+        setTimeout(() => {
+          document.getElementById('over-title').innerText = "إجابة خاطئة! 😅";
+          document.getElementById('over-desc').innerText = `الإجابة الصحيحة كانت: (${questions[currentIdx].opts[correctIdx]}). \nيمكنك إعادة السؤال أو الانتقال للتالي!`;
+          document.getElementById('over-screen').style.display = 'flex';
+        }, 2200);
+      }
+    }, 1500);
+  }
+
+  function retryQuestion() {
+    document.getElementById('over-screen').style.display = 'none';
+    loadQuestion();
+  }
+
+  function skipToNext() {
+    document.getElementById('over-screen').style.display = 'none';
+    currentIdx++;
+    if (currentIdx >= questions.length) {
+      stopAllAudio();
+      clearEffects();
+      document.getElementById('win-screen').style.display = 'flex';
+    } else {
+      loadQuestion();
+    }
+  }
+
+  function use5050() {
+    if (!canAnswer) return;
+    const btn = document.getElementById('life-5050');
+    if (btn.classList.contains('used')) return;
+    btn.classList.add('used');
+    playAudioTrack('lifeline');
+
+    const correctIdx = questions[currentIdx].ans;
+    let removed = 0;
+    const btns = document.querySelectorAll('.option-btn');
+
+    while (removed < 2) {
+      let rand = Math.floor(Math.random() * 4);
+      if (rand !== correctIdx && !btns[rand].classList.contains('hidden')) {
+        btns[rand].classList.add('hidden');
+        removed++;
+      }
+    }
+  }
+
+  function useAudience() {
+    if (!canAnswer) return;
+    const btn = document.getElementById('life-audience');
+    if (btn.classList.contains('used')) return;
+    btn.classList.add('used');
+    playAudioTrack('lifeline');
+
+    const correctIdx = questions[currentIdx].ans;
+    let percents = [0, 0, 0, 0];
+    let mainPercent = Math.floor(Math.random() * 25) + 55;
+    percents[correctIdx] = mainPercent;
+
+    let remaining = 100 - mainPercent;
+    for (let i = 0; i < 4; i++) {
+      if (i !== correctIdx) {
+        let p = Math.floor(Math.random() * remaining);
+        percents[i] = p;
+        remaining -= p;
+      }
+    }
+    percents[correctIdx] += remaining;
+
+    let html = '';
+    const letters = ['أ', 'ب', 'ج', 'د'];
+    for (let i = 0; i < 4; i++) {
+      html += `
+        <div class="poll-bar-container">
+          <div class="poll-label">${letters[i]}: ${percents[i]}%</div>
+          <div class="poll-bg"><div class="poll-fill" style="width: ${percents[i]}%"></div></div>
+        </div>
+      `;
+    }
+
+    showModal('رأي الجمهور 👥', html);
+  }
+
+  function usePhone() {
+    if (!canAnswer) return;
+    const btn = document.getElementById('life-phone');
+    if (btn.classList.contains('used')) return;
+    btn.classList.add('used');
+    playAudioTrack('lifeline');
+
+    const correctIdx = questions[currentIdx].ans;
+    const letters = ['أ', 'ب', 'ج', 'د'];
+    const answerName = questions[currentIdx].opts[correctIdx];
+
+    const html = `
+      <p style="font-size: 1rem; line-height: 1.6; color: #fff;">
+        📞 <b>جمال الصديق يتصل بك:</b><br>
+        "أنا واثق جداً أن الإجابة الصحيحة هي <b>(${letters[correctIdx]} - ${answerName})</b>!"
+      </p>
+    `;
+
+    showModal('اتصال بجمال 📞', html);
+  }
+
+  function showModal(title, content) {
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-content').innerHTML = content;
+    document.getElementById('modal').style.display = 'block';
+  }
+
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+  }
+
+  function startGame() {
+    stopAllAudio();
+    clearEffects();
+    currentIdx = 0;
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('over-screen').style.display = 'none';
+    document.getElementById('win-screen').style.display = 'none';
+
+    ['life-5050', 'life-audience', 'life-phone'].forEach(id => {
+      document.getElementById(id).classList.remove('used');
+    });
+
+    loadQuestion();
+  }
+</script>
+</body>
+</html>
